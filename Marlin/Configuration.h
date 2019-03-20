@@ -16,16 +16,16 @@
 // You might need Z-Min endstop on SCARA-Printer to use this feature. Actually untested!
 // Uncomment to use Morgan scara mode
 #define SCARA  
-#define scara_segments_per_second 200 //careful, two much will decrease performance...
-// Length of inner support arm
-#define Linkage_1 150 //mm      Preprocessor cannot handle decimal point...
+#define scara_segments_per_second 150 //careful, two much will decrease performance...  note: 150 allows to reach more speed than 200 for virk
+// Length of inner support arm 
+#define Linkage_1 130 //mm      Preprocessor cannot handle decimal point...
 // Length of outer support arm     Measure arm lengths precisely and enter 
-#define Linkage_2 150 //mm    
+#define Linkage_2 130 //mm    
 
 // SCARA tower offset (position of Tower relative to bed zero position) 
 // This needs to be reasonably accurate as it defines the printbed position in the SCARA space.
-#define SCARA_offset_x 100 //mm   
-#define SCARA_offset_y -56 //mm
+#define SCARA_offset_x 0 //mm   
+#define SCARA_offset_y 0 //mm
 #define SCARA_RAD2DEG 57.2957795  // to convert RAD to degrees
 
 #define THETA_HOMING_OFFSET 0	//calculatated from Calibration Guide and command M360 / M114 see picture in http://reprap.harleystudio.co.za/?page_id=1073
@@ -34,6 +34,16 @@
 //some helper variables to make kinematics faster
 #define L1_2 sq(Linkage_1) // do not change
 #define L2_2 sq(Linkage_2) // do not change
+#define KL12 L1_2 * L1_2 * 2 // do not change
+
+// CUSTOM
+#define DEFAULT_LEFT_ARM true
+#define SCARA_ANGLE_MIN_X -25
+#define X_SCARA_ANGLE_MAX 205
+#define SCARA_ANGLE_MIN_Y 0     // Y values should be always defined as a right arm 
+#define Y_SCARA_ANGLE_MAX 113
+#define SCARA_ANG_HOME_X X_SCARA_ANGLE_MAX
+#define SCARA_ANG_HOME_Y -Y_SCARA_ANGLE_MAX
 
 //===========================================================================
 //========================= SCARA Settings end ==================================
@@ -52,7 +62,7 @@
 
 // This determines the communication speed of the printer
 // This determines the communication speed of the printer
-#define BAUDRATE 250000
+#define BAUDRATE 115200
 
 // This enables the serial port associated to the Bluetooth interface
 //#define BTENABLED              // Enable BT interface on AT90USB devices
@@ -64,7 +74,7 @@
 #endif
 
 // Define this to set a custom name for your generic Mendel,
-// #define CUSTOM_MENDEL_NAME "This Mendel"
+ #define CUSTOM_MENDEL_NAME "Virk I"
 
 // Define this to set a unique identifier for this printer, (Used by some programs to differentiate between machines)
 // You can use an online service to generate a random UUID. (eg http://www.uuidgenerator.net/version4)
@@ -119,10 +129,10 @@
 // 147 is Pt100 with 4k7 pullup
 // 110 is Pt100 with 1k pullup (non standard)
 
-#define TEMP_SENSOR_0 1
+#define TEMP_SENSOR_0 0
 #define TEMP_SENSOR_1 0
 #define TEMP_SENSOR_2 0
-#define TEMP_SENSOR_BED 1
+#define TEMP_SENSOR_BED 0
 
 // This makes temp sensor 1 a redundant sensor for sensor 0. If the temperatures difference between these sensors is to high the print will be aborted.
 //#define TEMP_SENSOR_1_AS_REDUNDANT
@@ -297,7 +307,7 @@ your extruder heater takes 2 minutes to hit the target on heating.
 // #define COREXY
 
 // coarse Endstop Settings
-//#define ENDSTOPPULLUPS // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
+#define ENDSTOPPULLUPS // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
 
 #ifndef ENDSTOPPULLUPS
   // fine endstop settings: Individual pullups. will be ignored if ENDSTOPPULLUPS is defined
@@ -356,19 +366,19 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 // ENDSTOP SETTINGS:
 // Sets direction of endstop	s when homing; 1=MAX, -1=MIN
 #define X_HOME_DIR 1
-#define Y_HOME_DIR 1
-#define Z_HOME_DIR -1
+#define Y_HOME_DIR -1
+#define Z_HOME_DIR 1
 
 #define min_software_endstops true // If true, axis won't move to coordinates less than HOME_POS.
 #define max_software_endstops true  // If true, axis won't move to coordinates greater than the defined lengths below.
 
 // Travel limits after homing
-#define X_MAX_POS 200
-#define X_MIN_POS 0
-#define Y_MAX_POS 200
-#define Y_MIN_POS 0
-#define Z_MAX_POS 225
-#define Z_MIN_POS MANUAL_Z_HOME_POS
+#define X_MIN_POS -260
+#define Y_MIN_POS -260
+#define Z_MIN_POS 0
+#define X_MAX_POS 260
+#define Y_MAX_POS 260
+#define Z_MAX_POS 70
 
 #define X_MAX_LENGTH (X_MAX_POS - X_MIN_POS)
 #define Y_MAX_LENGTH (Y_MAX_POS - Y_MIN_POS)
@@ -471,9 +481,9 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 //Manual homing switch locations:
 // For deltabots this means top and center of the Cartesian print volume.
 // For SCARA: Offset between HomingPosition and Bed X=0 / Y=0
-#define MANUAL_X_HOME_POS -22.
-#define MANUAL_Y_HOME_POS -52.
-#define MANUAL_Z_HOME_POS 0.1  // Distance between nozzle and print surface after homing.
+#define MANUAL_X_HOME_POS -120
+#define MANUAL_Y_HOME_POS 80
+#define MANUAL_Z_HOME_POS 70  // Distance between nozzle and print surface after homing.
 
 
 //// MOVEMENT SETTINGS
@@ -482,11 +492,11 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 
 // default settings
 
-#define DEFAULT_AXIS_STEPS_PER_UNIT   {103.69,106.65,200/1.25,1000}  // default steps per unit for SCARA
-#define DEFAULT_MAX_FEEDRATE          {300, 300, 30, 25}    // (mm/sec)
-#define DEFAULT_MAX_ACCELERATION      {300,300,20,1000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
+#define DEFAULT_AXIS_STEPS_PER_UNIT   {44.444444,31.407407,400,24.25}  // default steps per unit for SCARA
+#define DEFAULT_MAX_FEEDRATE          {1000, 1000, 200, 25}    // got those values through try/error
+#define DEFAULT_MAX_ACCELERATION      {500,500,100,1000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
 
-#define DEFAULT_ACCELERATION          400    // X, Y, Z and E max acceleration in mm/s^2 for printing moves
+#define DEFAULT_ACCELERATION          500    // X, Y, Z and E max acceleration in mm/s^2 for printing moves
 #define DEFAULT_RETRACT_ACCELERATION  2000  // X, Y, Z and E max acceleration in mm/s^2 for retracts
 
 // Offset of the extruders (uncomment if using more than one and relying on firmware to position when changing).
@@ -496,8 +506,8 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 // #define EXTRUDER_OFFSET_Y {0.0, 5.00}  // (in mm) for each extruder, offset of the hotend on the Y axis
 
 // The speed change that does not require acceleration (i.e. the software might assume it can be done instantaneously)
-#define DEFAULT_XYJERK                5    // (mm/sec)
-#define DEFAULT_ZJERK                 0.4    // (mm/sec)
+#define DEFAULT_XYJERK                20    // (mm/sec)   // this was 5; increasing this seems to helps to smooth and speed movement
+#define DEFAULT_ZJERK                 0    // (mm/sec)
 #define DEFAULT_EJERK                 3    // (mm/sec)
 
 //===========================================================================
@@ -552,7 +562,7 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 
 // The RepRapDiscount Smart Controller (white PCB)
 // http://reprap.org/wiki/RepRapDiscount_Smart_Controller
-//#define REPRAP_DISCOUNT_SMART_CONTROLLER
+#define REPRAP_DISCOUNT_SMART_CONTROLLER
 
 // The GADGETS3D G3D LCD/SD Controller (blue PCB)
 // http://reprap.org/wiki/RAMPS_1.3/1.4_GADGETS3D_Shield_with_Panel
@@ -673,7 +683,7 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 
 
 #ifdef ULTIPANEL
-//  #define NEWPANEL  //enable this if you have a click-encoder panel
+  //#define NEWPANEL  //enable this if you have a click-encoder panel
   #define SDSUPPORT
   #define ULTRA_LCD
   #ifdef DOGLCD // Change number of lines to match the DOG graphic display
@@ -746,7 +756,7 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 // leaving it undefined or defining as 0 will disable the servo subsystem
 // If unsure, leave commented / disabled
 //
-//#define NUM_SERVOS 3 // Servo index starts with 0 for M280 command
+#define NUM_SERVOS 1 // Servo index starts with 0 for M280 command
 
 // Servo Endstops
 //

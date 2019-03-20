@@ -216,7 +216,7 @@
 #define X_HOME_RETRACT_MM 3
 #define Y_HOME_RETRACT_MM 3
 #define Z_HOME_RETRACT_MM 3
-//#define QUICK_HOME  //if this is defined, if both x and y are to be homed, a diagonal move will be performed initially.
+#define QUICK_HOME  //if this is defined, if both x and y are to be homed, a diagonal move will be performed initially.
 #ifdef SCARA
 	#define QUICK_HOME //SCARA needs Quickhome
 #endif

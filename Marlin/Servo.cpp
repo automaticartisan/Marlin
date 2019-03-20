@@ -274,7 +274,7 @@ uint8_t Servo::attach(int pin, int min, int max)
     timer16_Sequence_t timer = SERVO_INDEX_TO_TIMER(servoIndex);
     if(isTimerActive(timer) == false)
       initISR(timer);
-    servos[this->servoIndex].Pin.isActive = true;  // this must be set after the check for isTimerActive
+    servos[this->servoIndex].Pin.isActive = false;  // this must be set after the check for isTimerActive
   }
   return this->servoIndex ;
 }
@@ -290,13 +290,21 @@ void Servo::detach()
 
 void Servo::write(int value)
 {
-  if(value < MIN_PULSE_WIDTH)
-  {  // treat values less than 544 as angles in degrees (valid values in microseconds are handled as microseconds)
-    if(value < 0) value = 0;
-    if(value > 180) value = 180;
-    value = map(value, 0, 180, SERVO_MIN(),  SERVO_MAX());
+  if(value == -1) 
+  { 
+    servos[this->servoIndex].Pin.isActive = false;
   }
-  this->writeMicroseconds(value);
+  else { 
+    servos[this->servoIndex].Pin.isActive = true;
+    
+    if(value < MIN_PULSE_WIDTH)
+    {  // treat values less than 544 as angles in degrees (valid values in microseconds are handled as microseconds)
+      if(value < 0) value = 0;
+      if(value > 180) value = 180;
+      value = map(value, 0, 180, SERVO_MIN(),  SERVO_MAX());
+    }
+    this->writeMicroseconds(value);
+  }
 }
 
 void Servo::writeMicroseconds(int value)
