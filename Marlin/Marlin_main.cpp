@@ -10,10 +10,10 @@
   (at your option) any later version.
 
   This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty ofgg
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
-  p
+  
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -323,8 +323,7 @@ float delta_segments_per_second = DELTA_SEGMENTS_PER_SECOND;
 #ifdef SCARA                              // Build size scaling
 float axis_scaling[3] = {1, 1, 1}; // Build size scaling, default to 1
 boolean is_left_arm = DEFAULT_LEFT_ARM;
-float prev_delta[3] = {0.0, 0.0, 0.0};  // TODO: check is previous delta is store into another place
-int gripper_command = -1;
+float prev_delta[3] = {0.0, 0.0, 0.0};  // TODO: check is previous delta is stored into another place
 #endif
 
 bool cancel_heatup = false ;
@@ -955,8 +954,8 @@ static void axis_is_at_home(int axis) {
 
   if (axis < 2)
   {
-    delta[X_AXIS] = SCARA_ANG_HOME_X;
-    delta[Y_AXIS] = SCARA_ANG_HOME_Y;
+    delta[X_AXIS] = X_SCARA_HOME;
+    delta[Y_AXIS] = Y_SCARA_HOME;
 
     for (i = 0; i < 2; i++)
     {
@@ -2980,22 +2979,25 @@ Sigma_Exit:
         break;
       case 669: // M669 gripper
         //LCD_MESSAGEPGM(MSG_DWELL);
-        codenum = 500;      // wait 0.5 seg for gripper to open/close
+        unsigned long grip_time = 500;      // wait 0.5 seg for gripper to open/close
         int gripper_pos = -1;
-        if (code_seen('S')) codenum = code_value(); // time to wait
-        if (code_seen('P')) gripper_pos = code_value(); // servo position
+        if (code_seen('S')) grip_time = code_value(); // time to wait
+        if (code_seen('P')) {
+          gripper_pos = code_value(); // servo position
 
-        st_synchronize();
-        servos[0].write(gripper_pos);
-
-        codenum += millis();  // keep track of when we started waiting
-        previous_millis_cmd = millis();
-        while (millis() < codenum) {
-          manage_heater();
-          manage_inactivity();
-          lcd_update();
+          st_synchronize();
+          servos[0].write(gripper_pos);
+  
+          grip_time += millis();  // keep track of when we started waiting
+          previous_millis_cmd = millis();
+          while (millis() < grip_time) {
+            manage_heater();
+            manage_inactivity();
+            lcd_update();
+          }
+          // disable servo 
+          servos[0].write(-1);
         }
-        servos[0].write(-1);
         break;
 #endif
 #ifdef FWRETRACT
@@ -3997,10 +3999,6 @@ void get_coordinates()
     next_feedrate = code_value();
     if (next_feedrate > 0.0) feedrate = next_feedrate;
   }
-  gripper_command = -1;
-  if (code_seen('C')) {
-    gripper_command = code_value();
-  }
 }
 
 void get_arc_coordinates()
@@ -4030,16 +4028,7 @@ void get_arc_coordinates()
 
 float distance(float x1, float y1, float x2, float y2)
 {
-
   return sqrt (sq(x1 - x2) + sq(y1 - y2));
-}
-
-// https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
-float line_to_point_distance(float y0, float x0, float x1, float y1, float x2, float y2)
-{
-
-  return abs((y2 - y1) * x0 - (x2 - x1) * y0 + x2 * y1 - y2 * x1) / sqrt (sq(y2 - y1) + sq(x2 - x1));
-
 }
 
 #ifdef SCARA
@@ -4047,21 +4036,21 @@ boolean checkScaraDestinationAngles(float delta[3]) {
 
   boolean pass = true;
 
-  if (delta[X_AXIS] <= SCARA_ANGLE_MIN_X && prev_delta[X_AXIS] - delta[X_AXIS] > 0)
+  if (delta[X_AXIS] <= X_MIN_SCARA_ANG && prev_delta[X_AXIS] - delta[X_AXIS] > 0)
     pass = false;
 
-  if (delta[X_AXIS] >= X_SCARA_ANGLE_MAX && delta[X_AXIS] - prev_delta[X_AXIS] > 0)
+  if (delta[X_AXIS] >= X_MAX_SCARA_ANG && delta[X_AXIS] - prev_delta[X_AXIS] > 0)
     pass = false;
 
   float y_min;
   float y_max;
 
   if (is_left_arm) {
-    y_min = -Y_SCARA_ANGLE_MAX;
-    y_max = -SCARA_ANGLE_MIN_Y;
+    y_min = -Y_MAX_SCARA_ANG;
+    y_max = -Y_MIN_SCARA_ANG;
   } else {
-    y_min = SCARA_ANGLE_MIN_Y;
-    y_max = Y_SCARA_ANGLE_MAX;
+    y_min = Y_MIN_SCARA_ANG;
+    y_max = X_MAX_SCARA_ANG;
   }
 
   if (delta[Y_AXIS] <= y_min && prev_delta[Y_AXIS] - delta[Y_AXIS] > 0)
@@ -4079,10 +4068,14 @@ boolean trimCartesianDestination(float target[3]) {
 
   float target_r = distance(0, 0, target[X_AXIS], target[Y_AXIS]);
 
-  float rmax = Linkage_1 + Linkage_2 - 1;
+  float rmax;
+  if (target[X_AXIS] == 0)
+    rmax = Linkage_1 + Linkage_2;   // allows full extended arm, to check 
+  else
+    rmax = Linkage_1 + Linkage_2 - 1;
 
   if (target_r > rmax) {
-    //SERIAL_ECHOPGM("WARNING: can't reach target (out of reachable rarius).");   // SENDING A MESSAGE HERE CAN FROZE MARLIN!!
+    //SERIAL_ECHOPGM("WARNING: can't reach target (out of reachable rarius).");   // SENDING A MESSAGE HERE CAN FREEZE MARLIN!!
     target[X_AXIS] = rmax * cos(angle);
     target[Y_AXIS] = rmax * sin(angle);
     return false;
@@ -4090,7 +4083,6 @@ boolean trimCartesianDestination(float target[3]) {
 
   return true;
 }
-
 
 #endif
 

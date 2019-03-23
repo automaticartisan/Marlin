@@ -36,14 +36,14 @@
 #define L2_2 sq(Linkage_2) // do not change
 #define KL12 L1_2 * L1_2 * 2 // do not change
 
-// CUSTOM
+// VIRK NEW
 #define DEFAULT_LEFT_ARM true
-#define SCARA_ANGLE_MIN_X -25
-#define X_SCARA_ANGLE_MAX 205
-#define SCARA_ANGLE_MIN_Y 0     // Y values should be always defined as a right arm 
-#define Y_SCARA_ANGLE_MAX 113
-#define SCARA_ANG_HOME_X X_SCARA_ANGLE_MAX
-#define SCARA_ANG_HOME_Y -Y_SCARA_ANGLE_MAX
+#define X_MIN_SCARA_ANG -24.578
+#define X_MAX_SCARA_ANG 204.578 + 3.5
+#define Y_MIN_SCARA_ANG 0     // Y values should be always defined as a right arm 
+#define Y_MAX_SCARA_ANG 113.6 - 3.5
+#define X_SCARA_HOME X_MAX_SCARA_ANG
+#define Y_SCARA_HOME -Y_MAX_SCARA_ANG
 
 //===========================================================================
 //========================= SCARA Settings end ==================================
@@ -488,7 +488,7 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 
 //// MOVEMENT SETTINGS
 #define NUM_AXIS 4 // The axis order in all axis related arrays is X, Y, Z, E
-#define HOMING_FEEDRATE {40*60, 40*60, 10*60, 0}  // set the homing speeds (mm/min)
+#define HOMING_FEEDRATE {1000, 1000, 500, 0}  // set the homing speeds (mm/min)
 
 // default settings
 
