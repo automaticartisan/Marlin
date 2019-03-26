@@ -2762,6 +2762,8 @@ Sigma_Exit:
         SERIAL_PROTOCOL(float(st_get_position(Y_AXIS)) / axis_steps_per_unit[Y_AXIS]);
         SERIAL_PROTOCOLPGM(" Z:");
         SERIAL_PROTOCOL(float(st_get_position(Z_AXIS)) / axis_steps_per_unit[Z_AXIS]);
+        SERIAL_PROTOCOLPGM(" E:");
+        SERIAL_PROTOCOL(float(st_get_position(E_AXIS)) / axis_steps_per_unit[E_AXIS]);
 
         SERIAL_PROTOCOLLN("");
 #ifdef SCARA
@@ -4062,12 +4064,12 @@ boolean checkScaraDestinationAngles(float delta[4]) {
     pass = false;
 
 #ifdef SCARA_4TH_AXIS
-  float e_axis = delta[E_AXIS] + delta[X_AXIS] - 90 - delta[Y_AXIS];
+  /**float e_axis = delta[E_AXIS] + delta[X_AXIS] - 90 - delta[Y_AXIS];
 
   if (e_axis < E_MIN_SCARA_ANG)
     pass = false;
   else if (e_axis > E_MAX_SCARA_ANG)
-    pass = false;
+    pass = false;**/
 #endif
 
   return pass;
@@ -4177,7 +4179,7 @@ void prepare_move()
     if (checkScaraDestinationAngles(delta)) {
 
 #ifdef SCARA_4TH_AXIS
-      e_axis = e_axis + delta[X_AXIS] - 90 - delta[Y_AXIS];
+      e_axis = e_axis - (delta[X_AXIS] - 90 + delta[Y_AXIS]);
 #endif
 
       plan_buffer_line(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS],
@@ -4242,7 +4244,7 @@ void prepare_move()
 
       float e_axis = destination[E_AXIS];
 #ifdef SCARA_4TH_AXIS
-      e_axis = e_axis + delta[X_AXIS] - 90 - delta[Y_AXIS];
+      e_axis = e_axis - (delta[X_AXIS] - 90 + delta[Y_AXIS]);
 #endif
 
       plan_buffer_line(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS],

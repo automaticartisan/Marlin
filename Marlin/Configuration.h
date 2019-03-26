@@ -16,7 +16,7 @@
 // You might need Z-Min endstop on SCARA-Printer to use this feature. Actually untested!
 // Uncomment to use Morgan scara mode
 #define SCARA  
-#define scara_segments_per_second 150 //careful, two much will decrease performance...  note: 150 allows to reach more speed than 200 for virk
+#define scara_segments_per_second 150 //careful, two much will decrease performance...  
 // Length of inner support arm 
 #define Linkage_1 130 //mm      Preprocessor cannot handle decimal point...
 // Length of outer support arm     Measure arm lengths precisely and enter 
@@ -44,7 +44,7 @@
 #define Y_MAX_SCARA_ANG 113.6 - 3.5
 #define X_SCARA_HOME X_MAX_SCARA_ANG
 #define Y_SCARA_HOME -Y_MAX_SCARA_ANG
-#define SCARA_4TH_AXIS
+//#define SCARA_4TH_AXIS
 #define E_MIN_SCARA_ANG -160
 #define E_MAX_SCARA_ANG 160
 
@@ -498,11 +498,11 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 // Formula: <base_steps> x <micro_stepping> * <pulley_radio> / 360
 // X axis:  (200 x 16) * (75 / 15) / 360
 // Y axis:  (200 x 16) * (53 / 15) / 360
-// E axis (200 x 16) / 360
+// E axis (200 x 16) / 360 (optional)
 
 #define DEFAULT_AXIS_STEPS_PER_UNIT   {44.444444,31.407407,400,8,888888}  // default steps per unit for SCARA
-#define DEFAULT_MAX_FEEDRATE          {1000, 1000, 200, 25}    // got those values through try/error
-#define DEFAULT_MAX_ACCELERATION      {500,500,100,1000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
+#define DEFAULT_MAX_FEEDRATE          {1000, 1000, 200, 200}    // got those values through try/error
+#define DEFAULT_MAX_ACCELERATION      {500,500,70,500}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
 
 #define DEFAULT_ACCELERATION          500    // X, Y, Z and E max acceleration in mm/s^2 for printing moves
 #define DEFAULT_RETRACT_ACCELERATION  2000  // X, Y, Z and E max acceleration in mm/s^2 for retracts
@@ -514,9 +514,9 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 // #define EXTRUDER_OFFSET_Y {0.0, 5.00}  // (in mm) for each extruder, offset of the hotend on the Y axis
 
 // The speed change that does not require acceleration (i.e. the software might assume it can be done instantaneously)
-#define DEFAULT_XYJERK                20    // (mm/sec)   // this was 5; increasing this seems to helps to smooth and speed movement
+#define DEFAULT_XYJERK                40    // (mm/sec)   // got those values by trial/error
 #define DEFAULT_ZJERK                 0    // (mm/sec)
-#define DEFAULT_EJERK                 3    // (mm/sec)
+#define DEFAULT_EJERK                 20    // (mm/sec)
 
 //===========================================================================
 //=============================Additional Features===========================
