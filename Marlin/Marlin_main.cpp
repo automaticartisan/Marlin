@@ -324,6 +324,8 @@ float delta_segments_per_second = DELTA_SEGMENTS_PER_SECOND;
 float axis_scaling[3] = {1, 1, 1}; // Build size scaling, default to 1
 boolean is_left_arm = DEFAULT_LEFT_ARM;
 float prev_delta[3] = {0.0, 0.0, 0.0};  // TODO: check is previous delta is stored into another place
+unsigned long grip_time;
+int gripper_pos;
 #endif
 
 bool cancel_heatup = false ;
@@ -2979,8 +2981,8 @@ Sigma_Exit:
         break;
       case 669: // M669 gripper
         //LCD_MESSAGEPGM(MSG_DWELL);
-        unsigned long grip_time = 500;      // wait 0.5 seg for gripper to open/close
-        int gripper_pos = -1;
+        grip_time = 500;      // wait 0.5 seg for gripper to open/close
+        gripper_pos = -1;
         if (code_seen('S')) grip_time = code_value(); // time to wait
         if (code_seen('P')) {
           gripper_pos = code_value(); // servo position
@@ -4032,7 +4034,7 @@ float distance(float x1, float y1, float x2, float y2)
 }
 
 #ifdef SCARA
-boolean checkScaraDestinationAngles(float delta[3]) {
+boolean checkScaraDestinationAngles(float delta[4]) {
 
   boolean pass = true;
 
@@ -4059,10 +4061,19 @@ boolean checkScaraDestinationAngles(float delta[3]) {
   if (delta[Y_AXIS] >= y_max && delta[Y_AXIS] - prev_delta[Y_AXIS] > 0)
     pass = false;
 
+#ifdef SCARA_4TH_AXIS
+  float e_axis = delta[E_AXIS] + delta[X_AXIS] - 90 - delta[Y_AXIS];
+
+  if (e_axis < E_MIN_SCARA_ANG)
+    pass = false;
+  else if (e_axis > E_MAX_SCARA_ANG)
+    pass = false;
+#endif
+
   return pass;
 }
 
-boolean trimCartesianDestination(float target[3]) {
+boolean trimCartesianDestination(float target[4]) {
 
   float angle = atan2( target[Y_AXIS],  target[X_AXIS]);
 
@@ -4157,13 +4168,23 @@ void prepare_move()
 
   if (destination[X_AXIS] == current_position[X_AXIS] && destination[Y_AXIS] == current_position[Y_AXIS]) {
 
-    // Z axis only move; we don't need to chop, so we got a smooth move
+    // Z and/or E axis only move; we don't need to chop, so we got a smoother move
 
     calculate_delta(destination);
 
-    plan_buffer_line(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS],
-                     destination[E_AXIS], feedrate * feedmultiply / 60 / 100.0,
-                     active_extruder);
+    float e_axis = destination[E_AXIS];
+
+    if (checkScaraDestinationAngles(delta)) {
+
+#ifdef SCARA_4TH_AXIS
+      e_axis = e_axis + delta[X_AXIS] - 90 - delta[Y_AXIS];
+#endif
+
+      plan_buffer_line(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS],
+                       e_axis, feedrate * feedmultiply / 60 / 100.0,
+                       active_extruder);
+
+    }
 
   } else {
 
@@ -4219,8 +4240,13 @@ void prepare_move()
       prev_delta[X_AXIS] = delta[X_AXIS];
       prev_delta[Y_AXIS] = delta[Y_AXIS];
 
+      float e_axis = destination[E_AXIS];
+#ifdef SCARA_4TH_AXIS
+      e_axis = e_axis + delta[X_AXIS] - 90 - delta[Y_AXIS];
+#endif
+
       plan_buffer_line(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS],
-                       destination[E_AXIS], feedrate * feedmultiply / 60 / 100.0,
+                       e_axis, feedrate * feedmultiply / 60 / 100.0,
                        active_extruder);
     }
   }

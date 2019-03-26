@@ -44,6 +44,9 @@
 #define Y_MAX_SCARA_ANG 113.6 - 3.5
 #define X_SCARA_HOME X_MAX_SCARA_ANG
 #define Y_SCARA_HOME -Y_MAX_SCARA_ANG
+#define SCARA_4TH_AXIS
+#define E_MIN_SCARA_ANG -160
+#define E_MAX_SCARA_ANG 160
 
 //===========================================================================
 //========================= SCARA Settings end ==================================
