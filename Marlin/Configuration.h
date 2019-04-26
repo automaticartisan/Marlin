@@ -20,7 +20,7 @@
 // Length of inner support arm 
 #define Linkage_1 130 //mm      Preprocessor cannot handle decimal point...
 // Length of outer support arm     Measure arm lengths precisely and enter 
-#define Linkage_2 130 //mm    
+#define Linkage_2 163 //mm    
 
 // SCARA tower offset (position of Tower relative to bed zero position) 
 // This needs to be reasonably accurate as it defines the printbed position in the SCARA space.
@@ -34,7 +34,7 @@
 //some helper variables to make kinematics faster
 #define L1_2 sq(Linkage_1) // do not change
 #define L2_2 sq(Linkage_2) // do not change
-#define KL12 L1_2 * L1_2 * 2 // do not change
+#define KL12 (Linkage_1 * Linkage_2 * 2) // do not change
 
 // VIRK NEW
 #define DEFAULT_LEFT_ARM true
@@ -44,7 +44,9 @@
 #define Y_MAX_SCARA_ANG 113.6 - 3.5
 #define X_SCARA_HOME X_MAX_SCARA_ANG
 #define Y_SCARA_HOME -Y_MAX_SCARA_ANG
-//#define SCARA_4TH_AXIS
+#define SCARA_4TH_AXIS
+#define E_HOME_DIR 1
+#define E_HOME_POS 188
 #define E_MIN_SCARA_ANG -160
 #define E_MAX_SCARA_ANG 160
 
@@ -491,7 +493,7 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 
 //// MOVEMENT SETTINGS
 #define NUM_AXIS 4 // The axis order in all axis related arrays is X, Y, Z, E
-#define HOMING_FEEDRATE {1000, 1000, 500, 0}  // set the homing speeds (mm/min)
+#define HOMING_FEEDRATE {1000, 1000, 500, 500}  // set the homing speeds (mm/min)
 
 // default settings
 // For virk:
