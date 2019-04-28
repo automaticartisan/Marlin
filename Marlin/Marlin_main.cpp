@@ -1490,7 +1490,6 @@ void process_commands()
           current_position[E_AXIS] = 0;
 #endif
 
-
 #if Z_HOME_DIR > 0                      // If homing away from BED do Z first
         if ((home_all_axis) || (code_seen(axis_codes[Z_AXIS]))) {
           HOMEAXIS(Z);
@@ -1519,16 +1518,6 @@ void process_commands()
           } else {
             feedrate *= sqrt(pow(max_length(X_AXIS) / max_length(Y_AXIS), 2) + 1);
           }
-
-#ifdef SCARA_4TH_AXISXX
-          // Hard stop E Home
-          destination[E_AXIS] = 360;
-          plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], destination[E_AXIS], 5 * feedrate / 60, active_extruder);
-          st_synchronize();
-          current_position[E_AXIS] = E_HOME_POS - (delta[X_AXIS] - 90 + delta[Y_AXIS]);
-          destination[E_AXIS] = current_position[E_AXIS];
-          plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
-#endif
           
           plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate / 60, active_extruder);
           st_synchronize();
@@ -1547,17 +1536,6 @@ void process_commands()
 
           current_position[X_AXIS] = destination[X_AXIS];
           current_position[Y_AXIS] = destination[Y_AXIS];
-
-#ifdef SCARA_4TH_AXISZZ
-          // Hard stop E Home
-          float xfeedrate = 1.732 * homing_feedrate[X_AXIS];
-          destination[E_AXIS] = 360;
-          plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], destination[E_AXIS], xfeedrate / 60, active_extruder);
-          st_synchronize();
-          current_position[E_AXIS] = E_HOME_POS - (delta[X_AXIS] - 90 + delta[Y_AXIS]);
-          destination[E_AXIS] = current_position[E_AXIS];
-          plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
-#endif
           
 #ifndef SCARA
           current_position[Z_AXIS] = destination[Z_AXIS];
@@ -1684,7 +1662,6 @@ void process_commands()
         calculate_delta(current_position);
         plan_set_position(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], current_position[E_AXIS]);
 
-
 #ifdef SCARA_4TH_AXIS
           // Hard stop E Home
           float efeedrate = homing_feedrate[E_AXIS];
@@ -1700,7 +1677,6 @@ void process_commands()
           current_position[E_AXIS] = 0;
           plan_set_position(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], current_position[E_AXIS]);
 #endif
-
         
 #endif // SCARA
 
@@ -4112,34 +4088,12 @@ boolean checkScaraDestinationAngles(float delta[4]) {
   if (delta[Y_AXIS] >= y_max && delta[Y_AXIS] - prev_delta[Y_AXIS] > 0)
     pass = false;
 
-#ifdef SCARA_4TH_AXIS
-  /**float e_axis = delta[E_AXIS] + delta[X_AXIS] - 90 - delta[Y_AXIS];
-
-  if (e_axis < E_MIN_SCARA_ANG)
-    pass = false;
-  else if (e_axis > E_MAX_SCARA_ANG)
-    pass = false;**/
-#endif
-
   return pass;
 }
 
-float trim4AxisDestination(float target_e) {
-
-  float head_angle = delta[X_AXIS] - 90 + delta[Y_AXIS];
-
-  float internal_e_axis = target_e - head_angle;
-
-  if (internal_e_axis > E_MAX_SCARA_ANG)
-    return E_MAX_SCARA_ANG + head_angle;
-
-  if (internal_e_axis < E_MIN_SCARA_ANG)
-    return E_MIN_SCARA_ANG + head_angle;
-
-  return target_e;
-}
-
-boolean trimCartesianDestination(float target[4]) {
+boolean trimScaraDestination(float target[4]) {
+  
+  boolean doable = true;
 
   float angle = atan2( target[Y_AXIS],  target[X_AXIS]);
 
@@ -4155,10 +4109,28 @@ boolean trimCartesianDestination(float target[4]) {
     //SERIAL_ECHOPGM("WARNING: can't reach target (out of reachable rarius).");   // SENDING A MESSAGE HERE CAN FREEZE MARLIN!!
     target[X_AXIS] = rmax * cos(angle);
     target[Y_AXIS] = rmax * sin(angle);
-    return false;
+    doable = false;
   }
 
-  return true;
+#ifdef SCARA_4TH_AXIS
+
+  float head_angle = delta[X_AXIS] - 90 + delta[Y_AXIS];
+
+  float internal_e_axis = target[E_AXIS] - head_angle;
+
+  if (internal_e_axis > E_MAX_SCARA_ANG) {
+    target[E_AXIS] = E_MAX_SCARA_ANG + head_angle;
+    doable = false;
+  }
+
+  if (internal_e_axis < E_MIN_SCARA_ANG){
+    target[E_AXIS] = E_MIN_SCARA_ANG + head_angle;
+    doable = false;
+  }
+
+#endif
+  
+  return doable;
 }
 
 #endif
@@ -4230,29 +4202,25 @@ void prepare_move()
 
 #ifdef SCARA //for now same as delta-code
 
-  trimCartesianDestination(destination);
+  calculate_delta(destination);
+
+  trimScaraDestination(destination);
 
   if (destination[X_AXIS] == current_position[X_AXIS] && destination[Y_AXIS] == current_position[Y_AXIS]) {
 
     // Z and/or E axis only move; we don't need to chop, so we got a smoother move
-
-    calculate_delta(destination);
 
     float e_axis = destination[E_AXIS];
 
     if (checkScaraDestinationAngles(delta)) {
 
 #ifdef SCARA_4TH_AXIS
-      //e_axis = trim4AxisDestination(e_axis);
-      destination[E_AXIS] = e_axis;
       e_axis = e_axis - (delta[X_AXIS] - 90 + delta[Y_AXIS]);
-      //destination[E_AXIS] = e_axis;
 #endif
 
       plan_buffer_line(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS],
                        e_axis, feedrate * feedmultiply / 60 / 100.0,
                        active_extruder);
-
     }
 
   } else {
@@ -4282,7 +4250,6 @@ void prepare_move()
       for (int8_t i = 0; i < NUM_AXIS; i++) {
         new_destination[i] = current_position[i] + difference[i] * fraction;
       }
-
 
       calculate_delta(new_destination);
       //SERIAL_ECHOPGM("destination[X_AXIS]="); SERIAL_ECHOLN(destination[X_AXIS]);
