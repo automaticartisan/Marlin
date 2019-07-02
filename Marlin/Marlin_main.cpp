@@ -4061,15 +4061,27 @@ float distance(float x1, float y1, float x2, float y2)
 }
 
 #ifdef SCARA
-boolean checkScaraDestinationAngles(float delta[4]) {
+boolean checkScaraDestinationAngles(float delta[4], boolean trim) {
 
   boolean pass = true;
 
-  if (delta[X_AXIS] <= X_MIN_SCARA_ANG && prev_delta[X_AXIS] - delta[X_AXIS] > 0)
+  if (delta[X_AXIS] <= X_MIN_SCARA_ANG && prev_delta[X_AXIS] - delta[X_AXIS] > 0) {
+    
     pass = false;
 
-  if (delta[X_AXIS] >= X_MAX_SCARA_ANG && delta[X_AXIS] - prev_delta[X_AXIS] > 0)
+    if (trim) {
+        delta[X_AXIS] = X_MIN_SCARA_ANG + 1;
+    }
+  }
+
+  if (delta[X_AXIS] >= X_MAX_SCARA_ANG && delta[X_AXIS] - prev_delta[X_AXIS] > 0) {
+
     pass = false;
+
+    if (trim) {
+        delta[X_AXIS] = X_MAX_SCARA_ANG - 1;
+    }
+  }
 
   float y_min;
   float y_max;
@@ -4082,11 +4094,23 @@ boolean checkScaraDestinationAngles(float delta[4]) {
     y_max = X_MAX_SCARA_ANG;
   }
 
-  if (delta[Y_AXIS] <= y_min && prev_delta[Y_AXIS] - delta[Y_AXIS] > 0)
+  if (delta[Y_AXIS] <= y_min && prev_delta[Y_AXIS] - delta[Y_AXIS] > 0) {
+  
     pass = false;
 
-  if (delta[Y_AXIS] >= y_max && delta[Y_AXIS] - prev_delta[Y_AXIS] > 0)
+    if (trim) {
+        delta[Y_AXIS] = y_min + 1;
+    }
+  }
+
+  if (delta[Y_AXIS] >= y_max && delta[Y_AXIS] - prev_delta[Y_AXIS] > 0) {
+    
     pass = false;
+
+    if (trim) {
+        delta[Y_AXIS] = y_max - 1;
+    }
+  }
 
   return pass;
 }
@@ -4212,7 +4236,9 @@ void prepare_move()
 
     float e_axis = destination[E_AXIS];
 
-    if (checkScaraDestinationAngles(delta)) {
+    boolean reachable = checkScaraDestinationAngles(delta, false);
+
+    if (reachable) {
 
 #ifdef SCARA_4TH_AXIS
       e_axis = e_axis - (delta[X_AXIS] - 90 + delta[Y_AXIS]);
@@ -4221,6 +4247,8 @@ void prepare_move()
       plan_buffer_line(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS],
                        e_axis, feedrate * feedmultiply / 60 / 100.0,
                        active_extruder);
+    } else {
+      SERIAL_ECHOPGM("WARNING: can't reach position because of angular limits.");
     }
 
   } else {
@@ -4259,8 +4287,12 @@ void prepare_move()
       //SERIAL_ECHOPGM("delta[Y_AXIS]="); SERIAL_ECHOLN(delta[Y_AXIS]);
       //SERIAL_ECHOPGM("delta[Z_AXIS]="); SERIAL_ECHOLN(delta[Z_AXIS]);
 
-      if (!checkScaraDestinationAngles(delta)) {
+      boolean reachable = checkScaraDestinationAngles(delta, TRIM_NON_REACHABLE_ANGLES);
+
+      if (!reachable && !TRIM_NON_REACHABLE_ANGLES) {
+
         SERIAL_ECHOPGM("WARNING: can't reach position because of angular limits.");
+
         if (s == 1) {   // no move at all; we are stuck on a limit position
           for (int8_t i = 0; i < NUM_AXIS; i++) {
             destination[i] = current_position[i];

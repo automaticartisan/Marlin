@@ -38,6 +38,7 @@
 
 // VIRK NEW
 #define DEFAULT_LEFT_ARM true
+#define TRIM_NON_REACHABLE_ANGLES true
 #define X_MIN_SCARA_ANG -24.578
 #define X_MAX_SCARA_ANG 204.578 + 3.5
 #define Y_MIN_SCARA_ANG 0     // Y values should be always defined as a right arm 
@@ -46,7 +47,7 @@
 #define Y_SCARA_HOME -Y_MAX_SCARA_ANG
 #define SCARA_4TH_AXIS
 #define E_HOME_DIR 1
-#define E_HOME_POS 180
+#define E_HOME_POS 150
 #define E_MIN_SCARA_ANG -168
 #define E_MAX_SCARA_ANG 168
 
@@ -493,7 +494,7 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 
 //// MOVEMENT SETTINGS
 #define NUM_AXIS 4 // The axis order in all axis related arrays is X, Y, Z, E
-#define HOMING_FEEDRATE {1000, 1000, 500, 500}  // set the homing speeds (mm/min)
+#define HOMING_FEEDRATE {1000, 1000, 500, 250}  // set the homing speeds (mm/min)
 
 // default settings
 // For virk:
