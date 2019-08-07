@@ -20,7 +20,8 @@
 // Length of inner support arm 
 #define Linkage_1 130 //mm      Preprocessor cannot handle decimal point...
 // Length of outer support arm     Measure arm lengths precisely and enter 
-#define Linkage_2 163 //mm    
+#define Linkage_2 163 //mm
+#define SCARA_RAD Linkage_1 + Linkage_2
 
 // SCARA tower offset (position of Tower relative to bed zero position) 
 // This needs to be reasonably accurate as it defines the printbed position in the SCARA space.
@@ -38,7 +39,7 @@
 
 // VIRK NEW
 #define DEFAULT_LEFT_ARM true
-#define TRIM_NON_REACHABLE_ANGLES true
+#define TRIM_NON_REACHABLE_ANGLES false
 #define X_MIN_SCARA_ANG -24.578
 #define X_MAX_SCARA_ANG 204.578 + 3.5
 #define Y_MIN_SCARA_ANG 0     // Y values should be always defined as a right arm 
@@ -379,12 +380,21 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 #define max_software_endstops true  // If true, axis won't move to coordinates greater than the defined lengths below.
 
 // Travel limits after homing
-#define X_MIN_POS -260
-#define Y_MIN_POS -260
-#define Z_MIN_POS 0
-#define X_MAX_POS 260
-#define Y_MAX_POS 260
-#define Z_MAX_POS 70
+#ifdef SCARA 
+  #define X_MIN_POS -SCARA_RAD
+  #define Y_MIN_POS -SCARA_RAD
+  #define Z_MIN_POS 0
+  #define X_MAX_POS SCARA_RAD
+  #define Y_MAX_POS SCARA_RAD
+  #define Z_MAX_POS 70
+#else
+  #define X_MIN_POS -260
+  #define Y_MIN_POS -260
+  #define Z_MIN_POS 0
+  #define X_MAX_POS 260
+  #define Y_MAX_POS 260
+  #define Z_MAX_POS 70
+#endif
 
 #define X_MAX_LENGTH (X_MAX_POS - X_MIN_POS)
 #define Y_MAX_LENGTH (Y_MAX_POS - Y_MIN_POS)

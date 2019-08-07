@@ -1486,10 +1486,6 @@ void process_commands()
 
         home_all_axis = !((code_seen(axis_codes[X_AXIS])) || (code_seen(axis_codes[Y_AXIS])) || (code_seen(axis_codes[Z_AXIS])));
 
-#ifdef SCARA_4TH_AXISXX
-          current_position[E_AXIS] = 0;
-#endif
-
 #if Z_HOME_DIR > 0                      // If homing away from BED do Z first
         if ((home_all_axis) || (code_seen(axis_codes[Z_AXIS]))) {
           HOMEAXIS(Z);
@@ -4091,7 +4087,7 @@ boolean checkScaraDestinationAngles(float delta[4], boolean trim) {
     y_max = -Y_MIN_SCARA_ANG;
   } else {
     y_min = Y_MIN_SCARA_ANG;
-    y_max = X_MAX_SCARA_ANG;
+    y_max = Y_MAX_SCARA_ANG;
   }
 
   if (delta[Y_AXIS] <= y_min && prev_delta[Y_AXIS] - delta[Y_AXIS] > 0) {
@@ -4221,7 +4217,7 @@ void calculate_delta(float cartesian[3])
 
 void prepare_move()
 {
-  clamp_to_software_endstops(destination);
+  //clamp_to_software_endstops(destination);  // TODO: COMMENT FOR SCARA!!!
   previous_millis_cmd = millis();
 
 #ifdef SCARA //for now same as delta-code
