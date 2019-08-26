@@ -19,7 +19,7 @@
 */
 
 /*
-  This firmware is a mashup between Sprinter and grbl.
+  This firmware is a mashup between Sprinter and grbl.c 
   (https://github.com/kliment/Sprinter)
   (https://github.com/simen/grbl/tree)
 
@@ -4061,7 +4061,7 @@ boolean checkScaraDestinationAngles(float delta[4], boolean trim) {
 
   boolean pass = true;
 
-  if (delta[X_AXIS] <= X_MIN_SCARA_ANG && prev_delta[X_AXIS] - delta[X_AXIS] > 0) {
+  if (delta[X_AXIS] < X_MIN_SCARA_ANG && prev_delta[X_AXIS] - delta[X_AXIS] > 0) {
     
     pass = false;
 
@@ -4070,7 +4070,7 @@ boolean checkScaraDestinationAngles(float delta[4], boolean trim) {
     }
   }
 
-  if (delta[X_AXIS] >= X_MAX_SCARA_ANG && delta[X_AXIS] - prev_delta[X_AXIS] > 0) {
+  if (delta[X_AXIS] > X_MAX_SCARA_ANG && delta[X_AXIS] - prev_delta[X_AXIS] > 0) {
 
     pass = false;
 
@@ -4090,7 +4090,7 @@ boolean checkScaraDestinationAngles(float delta[4], boolean trim) {
     y_max = Y_MAX_SCARA_ANG;
   }
 
-  if (delta[Y_AXIS] <= y_min && prev_delta[Y_AXIS] - delta[Y_AXIS] > 0) {
+  if (delta[Y_AXIS] < y_min && prev_delta[Y_AXIS] - delta[Y_AXIS] > 0) {
   
     pass = false;
 
@@ -4099,7 +4099,7 @@ boolean checkScaraDestinationAngles(float delta[4], boolean trim) {
     }
   }
 
-  if (delta[Y_AXIS] >= y_max && delta[Y_AXIS] - prev_delta[Y_AXIS] > 0) {
+  if (delta[Y_AXIS] > y_max && delta[Y_AXIS] - prev_delta[Y_AXIS] > 0) {
     
     pass = false;
 
@@ -4119,11 +4119,7 @@ boolean trimScaraDestination(float target[4]) {
 
   float target_r = distance(0, 0, target[X_AXIS], target[Y_AXIS]);
 
-  float rmax;
-  if (target[X_AXIS] == 0)
-    rmax = Linkage_1 + Linkage_2;   // allows full extended arm, to check 
-  else
-    rmax = Linkage_1 + Linkage_2 - 1;
+  float rmax = Linkage_1 + Linkage_2;   // allows full extended arm, to check 
 
   if (target_r > rmax) {
     //SERIAL_ECHOPGM("WARNING: can't reach target (out of reachable rarius).");   // SENDING A MESSAGE HERE CAN FREEZE MARLIN!!
@@ -4288,6 +4284,8 @@ void prepare_move()
       if (!reachable && !TRIM_NON_REACHABLE_ANGLES) {
 
         SERIAL_ECHOPGM("WARNING: can't reach position because of angular limits.");
+        SERIAL_ECHOPGM("delta[X_AXIS]="); SERIAL_ECHOLN(delta[X_AXIS]);
+        SERIAL_ECHOPGM("delta[Y_AXIS]="); SERIAL_ECHOLN(delta[Y_AXIS]);
 
         if (s == 1) {   // no move at all; we are stuck on a limit position
           for (int8_t i = 0; i < NUM_AXIS; i++) {
