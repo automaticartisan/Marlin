@@ -39,7 +39,7 @@
 
 // VIRK NEW
 #define DEFAULT_LEFT_ARM true
-#define TRIM_NON_REACHABLE_ANGLES false
+#define TRIM_NON_REACHABLE_ANGLES true
 #define X_MIN_SCARA_ANG -24.578
 #define X_MAX_SCARA_ANG 204.578 + 3.5
 #define Y_MIN_SCARA_ANG 0     // Y values should be always defined as a right arm 
