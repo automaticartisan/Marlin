@@ -506,14 +506,14 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 #define NUM_AXIS 4 // The axis order in all axis related arrays is X, Y, Z, E
 #define HOMING_FEEDRATE {1000, 1000, 500, 250}  // set the homing speeds (mm/min)
 
-// default settings
+// default settingsM
 // For virk:
 // Formula: <base_steps> x <micro_stepping> * <pulley_radio> / 360
 // X axis:  (200 x 16) * (75 / 15) / 360
 // Y axis:  (200 x 16) * (53 / 15) / 360
 // E axis (200 x 16) / 360 (optional)
 
-#define DEFAULT_AXIS_STEPS_PER_UNIT   {44.444444,31.407407,400,8.888888}  // default steps per unit for SCARA
+#define DEFAULT_AXIS_STEPS_PER_UNIT   {44.444444,31.407407,100,8.888888}  // default steps per unit for SCARA
 #define DEFAULT_MAX_FEEDRATE          {1000, 1000, 200, 200}    // got those values through try/error
 #define DEFAULT_MAX_ACCELERATION      {500,500,70,500}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
 

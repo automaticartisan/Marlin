@@ -1653,14 +1653,14 @@ void process_commands()
 #endif
         plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
 #endif // else DELTA
-
+float efeedrate;    // crossed initialization error if put below
 #ifdef SCARA
         calculate_delta(current_position);
         plan_set_position(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], current_position[E_AXIS]);
 
 #ifdef SCARA_4TH_AXIS
           // Hard stop E Home
-          float efeedrate = homing_feedrate[E_AXIS];
+          efeedrate = homing_feedrate[E_AXIS];
           destination[E_AXIS] = 360;
           plan_buffer_line(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], destination[E_AXIS], efeedrate / 6, active_extruder);
           st_synchronize();
@@ -3020,8 +3020,9 @@ Sigma_Exit:
             manage_inactivity();
             lcd_update();
           }
-          // disable servo 
-          servos[0].write(-1);
+          // disable servo
+          if (code_seen('S'))
+            servos[0].write(-1);
         }
         break;
 #endif
