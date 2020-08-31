@@ -345,6 +345,8 @@ int meas_delay_cm = MEASUREMENT_DELAY_CM;  //distance delay setting
 const char errormagic[] PROGMEM = "Error:";
 const char echomagic[] PROGMEM = "echo:";
 
+float scara_min_rad;
+
 //===========================================================================
 //=============================Private Variables=============================
 //===========================================================================
@@ -410,6 +412,8 @@ boolean chdkActive = false;
 
 void get_arc_coordinates();
 bool setTargetedHotend(int code);
+void prepare_move(boolean jog);
+void prepare_move();
 
 void serial_echopair_P(const char *s_P, float v)
 {
@@ -635,8 +639,21 @@ void setup()
   digitalWrite(SERVO0_PIN, LOW); // turn it off
 #endif // Z_PROBE_SLED
   setup_homepin();
-}
 
+#ifdef SCARA  
+  
+  delta[X_AXIS] = X_MAX_SCARA_ANG;
+
+  if (is_left_arm)
+    delta[Y_AXIS] = -Y_MAX_SCARA_ANG;
+  else 
+    delta[Y_AXIS] = Y_MAX_SCARA_ANG;
+
+  calculate_SCARA_forward_Transform(delta);
+
+  scara_min_rad = sqrt(sq(delta[X_AXIS]) + sq(delta[Y_AXIS]));
+#endif
+}
 
 void loop()
 {
@@ -1370,6 +1387,13 @@ void process_commands()
     switch ((int)code_value())
     {
       case 0: // G0 -> G1
+#ifdef SCARA
+        if (Stopped == false) {
+          get_coordinates(); // For X Y Z E F
+          prepare_move(true);
+        }
+        break;
+#endif
       case 1: // G1
         if (Stopped == false) {
           get_coordinates(); // For X Y Z E F
@@ -2975,7 +2999,7 @@ Sigma_Exit:
 #endif
 #ifdef SCARA
       case 667: // M667 switch to left arm scara mode
-        calculate_delta(current_position);
+        /*calculate_delta(current_position);
         delta[Y_AXIS] = 0;
         plan_buffer_line(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS],
                          current_position[E_AXIS], feedrate * feedmultiply / 60 / 100.0,
@@ -2984,12 +3008,12 @@ Sigma_Exit:
         calculate_SCARA_forward_Transform(delta);
         for (int8_t i = 0; i < NUM_AXIS; i++) {
           current_position[i] = delta[i];
-        }
+        }*/
         is_left_arm = true;
         //plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS],current_position[E_AXIS]);
         break;
       case 668: // M667 switch to right arm scara mode
-        calculate_delta(current_position);
+        /*calculate_delta(current_position);
         delta[Y_AXIS] = 0;
         plan_buffer_line(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS],
                          current_position[E_AXIS], feedrate * feedmultiply / 60 / 100.0,
@@ -2998,7 +3022,7 @@ Sigma_Exit:
         calculate_SCARA_forward_Transform(delta);
         for (int8_t i = 0; i < NUM_AXIS; i++) {
           current_position[i] = delta[i];
-        }
+        }*/
         is_left_arm = false;
         //plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS],current_position[E_AXIS])
         break;
@@ -3024,6 +3048,18 @@ Sigma_Exit:
           servos[0].write(-1);
         }
         break;
+
+      case 700: // M700   simplified M114
+        SERIAL_PROTOCOLPGM("(");
+        SERIAL_PROTOCOL(current_position[X_AXIS]);
+        SERIAL_PROTOCOLPGM(",");
+        SERIAL_PROTOCOL(current_position[Y_AXIS]);
+        SERIAL_PROTOCOLPGM(",");
+        SERIAL_PROTOCOL(current_position[Z_AXIS]);
+        SERIAL_PROTOCOLPGM(",");
+        SERIAL_PROTOCOL(current_position[E_AXIS]);
+        SERIAL_PROTOCOLPGM(")");
+        SERIAL_PROTOCOLLN("");
 #endif
 #ifdef FWRETRACT
       case 207: //M207 - set retract length S[positive mm] F[feedrate mm/min] Z[additional zlift/hop]
@@ -4057,16 +4093,21 @@ float distance(float x1, float y1, float x2, float y2)
 }
 
 #ifdef SCARA
-boolean checkScaraDestinationAngles(float delta[4], boolean trim) {
+// *IMPORTANT: delta should have current target angles
+boolean checkScaraDestinationAngles(float* delta, boolean trim, boolean updateDestination) {
 
   boolean pass = true;
+  boolean changed = false;
 
+  // Please not check only if moving towards negative limits,
+  // so we can go away of negative limit and don't get stuck
   if (delta[X_AXIS] < X_MIN_SCARA_ANG && prev_delta[X_AXIS] - delta[X_AXIS] > 0) {
     
     pass = false;
 
     if (trim) {
         delta[X_AXIS] = X_MIN_SCARA_ANG + 1;
+        changed = true;
     }
   }
 
@@ -4076,6 +4117,7 @@ boolean checkScaraDestinationAngles(float delta[4], boolean trim) {
 
     if (trim) {
         delta[X_AXIS] = X_MAX_SCARA_ANG - 1;
+        changed = true;
     }
   }
 
@@ -4096,6 +4138,7 @@ boolean checkScaraDestinationAngles(float delta[4], boolean trim) {
 
     if (trim) {
         delta[Y_AXIS] = y_min + 1;
+        changed = true;
     }
   }
 
@@ -4105,13 +4148,22 @@ boolean checkScaraDestinationAngles(float delta[4], boolean trim) {
 
     if (trim) {
         delta[Y_AXIS] = y_max - 1;
+        changed = true;
     }
+  }
+
+  if (updateDestination) {
+
+    calculate_SCARA_forward_Transform(delta);
+
+    destination[X_AXIS] = delta[X_AXIS];
+    destination[Y_AXIS] = delta[Y_AXIS];
   }
 
   return pass;
 }
 
-boolean trimScaraDestination(float target[4]) {
+boolean trimScaraDestinationXY(float target[4]) {
   
   boolean doable = true;
 
@@ -4126,7 +4178,19 @@ boolean trimScaraDestination(float target[4]) {
     target[X_AXIS] = rmax * cos(angle);
     target[Y_AXIS] = rmax * sin(angle);
     doable = false;
+  } else if (target_r < scara_min_rad) {
+    target[X_AXIS] = scara_min_rad * cos(angle);
+    target[Y_AXIS] = scara_min_rad * sin(angle);
+    doable = false;
   }
+
+  return doable;
+}
+
+// *NOTE* delta should have destination angles
+boolean trimScaraDestinationE(float target[4]) {
+
+  boolean doable = true;
 
 #ifdef SCARA_4TH_AXIS
 
@@ -4134,6 +4198,8 @@ boolean trimScaraDestination(float target[4]) {
 
   float internal_e_axis = target[E_AXIS] - head_angle;
 
+  // absolute limits
+  
   if (internal_e_axis > E_MAX_SCARA_ANG) {
     target[E_AXIS] = E_MAX_SCARA_ANG + head_angle;
     doable = false;
@@ -4143,7 +4209,6 @@ boolean trimScaraDestination(float target[4]) {
     target[E_AXIS] = E_MIN_SCARA_ANG + head_angle;
     doable = false;
   }
-
 #endif
   
   return doable;
@@ -4211,26 +4276,35 @@ void calculate_delta(float cartesian[3])
 }
 #endif
 
-void prepare_move()
+void prepare_move() {
+
+  prepare_move(false);
+}
+
+void prepare_move(boolean jog)
 {
   //clamp_to_software_endstops(destination);  // TODO: COMMENT FOR SCARA!!!
   previous_millis_cmd = millis();
 
 #ifdef SCARA //for now same as delta-code
 
+  trimScaraDestinationXY(destination);
+
   calculate_delta(destination);
 
-  trimScaraDestination(destination);
+  trimScaraDestinationE(destination);
+
+  boolean reachable = checkScaraDestinationAngles(delta, true, true);
+
+  if (!reachable) return;
 
   if (destination[X_AXIS] == current_position[X_AXIS] && destination[Y_AXIS] == current_position[Y_AXIS]) {
 
     // Z and/or E axis only move; we don't need to chop, so we got a smoother move
 
+    calculate_delta(destination);
+
     float e_axis = destination[E_AXIS];
-
-    boolean reachable = checkScaraDestinationAngles(delta, false);
-
-    if (reachable) {
 
 #ifdef SCARA_4TH_AXIS
       e_axis = e_axis - (delta[X_AXIS] - 90 + delta[Y_AXIS]);
@@ -4239,9 +4313,6 @@ void prepare_move()
       plan_buffer_line(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS],
                        e_axis, feedrate * feedmultiply / 60 / 100.0,
                        active_extruder);
-    } else {
-      SERIAL_ECHOPGM("WARNING: can't reach position because of angular limits.");
-    }
 
   } else {
 
@@ -4261,7 +4332,11 @@ void prepare_move()
       return;
     }
     float seconds = 6000 * cartesian_mm / feedrate / feedmultiply;
-    int steps = max(1, int(scara_segments_per_second * seconds));
+    int steps;
+    if (jog)
+      steps = 1;
+    else
+      steps = max(1, int(scara_segments_per_second * seconds));
     //SERIAL_ECHOPGM("mm="); SERIAL_ECHO(cartesian_mm);
     //SERIAL_ECHOPGM(" seconds="); SERIAL_ECHO(seconds);
     //SERIAL_ECHOPGM(" steps="); SERIAL_ECHOLN(steps);
@@ -4279,7 +4354,7 @@ void prepare_move()
       //SERIAL_ECHOPGM("delta[Y_AXIS]="); SERIAL_ECHOLN(delta[Y_AXIS]);
       //SERIAL_ECHOPGM("delta[Z_AXIS]="); SERIAL_ECHOLN(delta[Z_AXIS]);
 
-      boolean reachable = checkScaraDestinationAngles(delta, TRIM_NON_REACHABLE_ANGLES);
+      boolean reachable = checkScaraDestinationAngles(delta, TRIM_NON_REACHABLE_ANGLES, false);
 
       if (!reachable && !TRIM_NON_REACHABLE_ANGLES) {
 
@@ -4312,7 +4387,9 @@ void prepare_move()
                        e_axis, feedrate * feedmultiply / 60 / 100.0,
                        active_extruder);
     }
+
   }
+  
 #endif // SCARA
 
 #ifdef DELTA
@@ -4509,6 +4586,10 @@ void calculate_delta(float cartesian[3]) {
 #else
   SCARA_C2 = ( sq(SCARA_pos[X_AXIS]) + sq(SCARA_pos[Y_AXIS]) - L1_2 - L2_2) / (Linkage_1 * Linkage_2 * 2.0);
 #endif
+
+  if (SCARA_C2 > 1) // this can happen near limits
+    SCARA_C2 = 1;
+
 //SERIAL_ECHOPGM("SCARA_C2="); SERIAL_ECHO(SCARA_C2);
   SCARA_S2 = sqrt( 1 - sq(SCARA_C2) );
 

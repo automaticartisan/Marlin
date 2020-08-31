@@ -40,17 +40,18 @@
 // VIRK NEW
 #define DEFAULT_LEFT_ARM true
 #define TRIM_NON_REACHABLE_ANGLES true
+#define ANG_LIMIT_CLEARANCE 2
 #define X_MIN_SCARA_ANG -24.578
-#define X_MAX_SCARA_ANG 204.578 + 3.5
+#define X_MAX_SCARA_ANG (204.578 + 3.5 -ANG_LIMIT_CLEARANCE)
 #define Y_MIN_SCARA_ANG 0     // Y values should be always defined as a right arm 
-#define Y_MAX_SCARA_ANG 113.6 - 3.5
-#define X_SCARA_HOME X_MAX_SCARA_ANG
-#define Y_SCARA_HOME -Y_MAX_SCARA_ANG
+#define Y_MAX_SCARA_ANG (113.6 - 3.5 - ANG_LIMIT_CLEARANCE)
+#define X_SCARA_HOME (X_MAX_SCARA_ANG + ANG_LIMIT_CLEARANCE)
+#define Y_SCARA_HOME (-Y_MAX_SCARA_ANG - ANG_LIMIT_CLEARANCE)
 #define SCARA_4TH_AXIS
 #define E_HOME_DIR 1
 #define E_HOME_POS 150
-#define E_MIN_SCARA_ANG -168
-#define E_MAX_SCARA_ANG 168
+#define E_MIN_SCARA_ANG -145
+#define E_MAX_SCARA_ANG 145
 
 //===========================================================================
 //========================= SCARA Settings end ==================================
@@ -515,9 +516,9 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 
 #define DEFAULT_AXIS_STEPS_PER_UNIT   {44.444444,31.407407,100,8.888888}  // default steps per unit for SCARA
 #define DEFAULT_MAX_FEEDRATE          {1000, 1000, 200, 200}    // got those values through try/error
-#define DEFAULT_MAX_ACCELERATION      {500,500,70,500}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
+#define DEFAULT_MAX_ACCELERATION      {200,200,70,500}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
 
-#define DEFAULT_ACCELERATION          500    // X, Y, Z and E max acceleration in mm/s^2 for printing moves
+#define DEFAULT_ACCELERATION          200    // X, Y, Z and E max acceleration in mm/s^2 for printing moves
 #define DEFAULT_RETRACT_ACCELERATION  2000  // X, Y, Z and E max acceleration in mm/s^2 for retracts
 
 // Offset of the extruders (uncomment if using more than one and relying on firmware to position when changing).
