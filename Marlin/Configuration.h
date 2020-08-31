@@ -507,7 +507,7 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 #define NUM_AXIS 4 // The axis order in all axis related arrays is X, Y, Z, E
 #define HOMING_FEEDRATE {1000, 1000, 500, 250}  // set the homing speeds (mm/min)
 
-// default settings
+// default settingsM
 // For virk:
 // Formula: <base_steps> x <micro_stepping> * <pulley_radio> / 360
 // X axis:  (200 x 16) * (75 / 15) / 360
